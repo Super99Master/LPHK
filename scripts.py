@@ -10,8 +10,18 @@ DELAY_EXIT_CHECK = 0.025
 
 import files
 
-VALID_COMMANDS = ["@ASYNC", "@SIMPLE", "STRING", "DELAY", "TAP", "PRESS", "RELEASE", "WEB", "WEB_NEW", "SOUND", "WAIT_UNPRESSED", "M_MOVE", "M_SET", "M_SCROLL", "M_LINE", "M_LINE_MOVE", "M_LINE_SET", "LABEL", "IF_PRESSED_GOTO_LABEL", "IF_UNPRESSED_GOTO_LABEL", "GOTO_LABEL", "REPEAT_LABEL", "IF_PRESSED_REPEAT_LABEL", "IF_UNPRESSED_REPEAT_LABEL", "M_STORE", "M_RECALL", "M_RECALL_LINE", "OPEN", "RELEASE_ALL", "RESET_REPEATS"]
+VALID_COMMANDS = ["@ASYNC", "@SIMPLE", "STRING", "DELAY", "TAP", "PRESS", "RELEASE", "SOUND", "WAIT_UNPRESSED", "M_MOVE", "M_SET", "M_SCROLL", "M_LINE", "M_LINE_MOVE", "M_LINE_SET", "LABEL", "IF_PRESSED_GOTO_LABEL", "IF_UNPRESSED_GOTO_LABEL", "GOTO_LABEL", "REPEAT_LABEL", "IF_PRESSED_REPEAT_LABEL", "IF_UNPRESSED_REPEAT_LABEL", "M_STORE", "M_RECALL", "M_RECALL_LINE", "OPEN", "RELEASE_ALL", "RESET_REPEATS"]
 ASYNC_HEADERS = ["@ASYNC", "@SIMPLE"]
+
+#ModuleImporter Initialization
+_debug=True
+import ModuleImporter
+CustomFunc=ModuleImporter.GetFunction(_debug)
+for x in CustomFunc[0]:
+    if _debug:
+        print(f"MI: {x}")
+    VALID_COMMANDS.append(x)
+#End Initalization
 
 threads = [[None for y in range(9)] for x in range(9)]
 running = False
@@ -198,18 +208,6 @@ def run_script(script_str, x, y):
                 print("[scripts] " + coords + "    Release key " + split_line[1])
                 key = kb.sp(split_line[1])
                 kb.release(key)
-            elif split_line[0] == "WEB":
-                link = split_line[1]
-                if "http" not in link:
-                    link = "http://" + link
-                print("[scripts] " + coords + "    Open website " + link + " in default browser")
-                webbrowser.open(link)
-            elif split_line[0] == "WEB_NEW":
-                link = split_line[1]
-                if "http" not in link:
-                    link = "http://" + link
-                print("[scripts] " + coords + "    Open website " + link + " in default browser, try to make a new window")
-                webbrowser.open_new(link)
             elif split_line[0] == "SOUND":
                 if len(split_line) > 2:
                     print("[scripts] " + coords + "    Play sound file " + split_line[1] + " at volume " + str(split_line[2]))
@@ -514,6 +512,16 @@ def run_script(script_str, x, y):
                 print("[scripts] " + coords + "    Reset all repeats")
                 for i in repeats:
                     repeats[i] = repeats_original[i]
+            #ModuleImporter Function Caller
+            elif split_line[0] in CustomFunc[0]:
+                temp=""
+                for temp1 in split_line:
+                    if temp1!=split_line[0]:
+                        temp+=f',"{temp1}"'
+                if _debug:
+                    print(f'MI: Executing "CustomFunc[0]["{split_line[0]}"]({coords}{temp})"')
+                exec(f"CustomFunc[0][split_line[0]]({coords}{temp})")
+            #End Function Caller
             else:
                 print("[scripts] " + coords + "    Invalid command: " + split_line[0] + ", skipping...")
         return idx + 1
@@ -672,13 +680,13 @@ def validate_script(script_str):
                         return ("Headers must only be used on the first line of a script.", line)
                 if split_line[0] not in VALID_COMMANDS:
                     return ("Command '" + split_line[0] + "' not valid.", line)
-                if split_line[0] in ["STRING", "DELAY", "TAP", "PRESS", "RELEASE", "WEB", "WEB_NEW", "SOUND", "M_MOVE", "M_SET", "M_SCROLL", "OPEN"]:
+                if split_line[0] in ["STRING", "DELAY", "TAP", "PRESS", "RELEASE", "SOUND", "M_MOVE", "M_SET", "M_SCROLL", "OPEN"]:
                     if len(split_line) < 2:
                         return ("Too few arguments for command '" + split_line[0] + "'.", line)
                 if split_line[0] in ["WAIT_UNPRESSED", "RELEASE_ALL", "RESET_REPEATS"]:
                     if len(split_line) > 1:
                         return ("Too many arguments for command '" + split_line[0] + "'.", line)
-                if split_line[0] in ["DELAY", "WEB", "WEB_NEW", "PRESS", "RELEASE"]:
+                if split_line[0] in ["DELAY", "PRESS", "RELEASE"]:
                     if len(split_line) > 2:
                         return ("Too many arguments for command '" + split_line[0] + "'.", line)
                 if split_line[0] in ["SOUND", "M_MOVE", "M_SCROLL", "M_SET"]:
@@ -847,4 +855,14 @@ def validate_script(script_str):
                     path_name = " ".join(split_line[1:])
                     if (not os.path.isfile(path_name)) and (not os.path.isdir(path_name)):
                         return (split_line[0] + " folder or file location '" + path_name + "' does not exist.", line)
+                #ModuleImporter Args Checker
+                if split_line[0] in CustomFunc[0]:
+                    ReqArgs=CustomFunc[1][CustomFunc[0][split_line[0]].__name__]
+                    if len(split_line)!=len(ReqArgs):
+                        temp=""
+                        for temp1 in ReqArgs:
+                            if temp1!="coords":
+                                temp+=temp1+" "
+                        return (f"{split_line[0]} need only {len(ReqArgs)-1} arg(s): {temp}",line)
+                #End Args Checker
     return True
