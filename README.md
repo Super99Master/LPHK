@@ -1,7 +1,9 @@
 # Base LPHK + AutoImporterFunction
 
 Just added a ModuleImporter that import all function in language_modules folder.\
-To disable MI prints change _debug in script.py from True to False	
+When importing a function it checks if the dependencies are in the pc and if they are not it will try to install it.\
+If it fail, it will skip the file and will not implement function in that file.\
+To disable MI prints change _debug in script.py from True to False.\
 ## How: 
 ### To import custom function
 ```python
