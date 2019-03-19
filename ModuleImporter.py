@@ -8,13 +8,11 @@ def _checklib(lib):
         return False
 
 def _requestinstall(lib):
-    if input(f"Mod: {lib} not found in your pc.\nDo you want to install it?\n y(Yes) | n(No)\n>")=="y":
+    if input(f"MI: {lib} not found in your pc.\nDo you want to install it?\n y(Yes) | n(No)\n>")=="y":
         os.system(f"pip install {lib}")
         if not _checklib(lib):
-            print(f"Mod: Couldn't install {lib}")
             return False
         else:
-            print(f"Mod: {lib} installed")
             return True
     return False
 
